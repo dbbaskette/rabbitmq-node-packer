@@ -5,7 +5,11 @@
 BOX_IMAGE="bento/ubuntu-16.04"
 #BOX_IMAGE="ubuntu/trusty64"
 PROVIDER="virtualbox"
-ATLAS_TOKEN=<ENTER ATLAS TOKEN>
+
+# Either Provide ATLAS Token Here or as and ENV variable.
+#ATLAS_TOKEN=<ENTER ATLAS TOKEN>
+
+
 vagrant box add $BOX_IMAGE --provider $PROVIDER
 CURRENT_BOX=$(vagrant box list | grep $BOX_IMAGE | grep $PROVIDER | sed '$!d' | sed 's/.*, //' | sed 's/.$//')
 BOX_DIR=$(echo $BOX_IMAGE | sed 's/\//-VAGRANTSLASH-/g')
