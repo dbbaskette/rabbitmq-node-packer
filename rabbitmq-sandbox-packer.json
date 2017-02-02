@@ -1,0 +1,94 @@
+{
+  "variables": {
+    "vm_basename": "rabbitmq-sandbox",
+    "vm_cpus": "1",
+    "vm_ram": "512",
+    "vm_hostname": "rabbit1",
+    "rabbit_user": "rabbit",
+    "rabbit_pw": "rabbit"
+  },
+  "builders": [
+    {
+      "type": "virtualbox-ovf",
+      "source_path": "{{user `box_path`}}",
+      "guest_additions_mode": "upload",
+      "vboxmanage": [
+        [
+          "modifyvm","{{.Name}}","--memory","{{user `vm_ram`}}"
+        ],
+        [
+          "modifyvm","{{.Name}}", "--cpus","{{user `vm_cpus`}}"
+        ],
+        [
+          "modifyvm","{{.Name}}","--nic1","nat"
+        ],
+        [
+          "modifyvm","{{.Name}}","--natpf1","ssh,tcp,,2200,,22"
+        ],
+        [
+          "modifyvm","{{.Name}}","--natpf1","epmd,tcp,,4369,,4369"
+        ],
+        [
+          "modifyvm", "{{.Name}}","--natpf1","amqptls,tcp,,5671,,5671"
+        ],
+        [
+          "modifyvm","{{.Name}}","--natpf1","amqp,tcp,,5672,,5672"
+        ],
+        [
+          "modifyvm", "{{.Name}}","--natpf1","erlang,tcp,,25672,,25672"
+        ],
+        [
+          "modifyvm","{{.Name}}","--natpf1","management,tcp,,15672,,15672"
+        ],
+        [
+          "modifyvm", "{{.Name}}","--vrde","off"
+        ]
+      ],
+      "headless": true,
+      "ssh_username": "vagrant",
+      "ssh_password": "vagrant",
+      "ssh_pty": true,
+      "shutdown_command": "echo '/sbin/halt -h -p' > /tmp/shutdown.sh; echo 'vagrant'|sudo -S sh '/tmp/shutdown.sh'",
+      "vm_name": "{{user `vm_basename`}}-{{user `rabbit_version`}}",
+      "output_directory": "{{user `vm_basename`}}-{{user `rabbit_version`}}"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "scripts/install-oss-rabbit.sh",
+      "destination": "/home/vagrant/install-oss-rabbit.sh"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "chmod +x /home/vagrant/install-oss-rabbit.sh",
+        "/home/vagrant/install-oss-rabbit.sh {{user `vm_hostname`}} {{user `rabbit_user`}} {{user `rabbit_pw`}} {{user `rabbit_version`}}",
+        "rm -f /home/vagrant/install-oss-rabbit.sh"
+      ]
+    }
+  ],
+  "post-processors": [
+     [{
+      "type": "vagrant",
+      "keep_input_artifact": false
+    },
+    {
+      "type": "atlas",
+      "token": "{{user `atlas_token`}}",
+      "artifact": "dbbaskette/rabbitmq",
+      "artifact_type": "vagrant.box",
+      "keep_input_artifact": false,
+      "metadata": {
+        "provider": "virtualbox",
+        "version": "{{user `rabbit_version`}}",
+        "created_at": "{{timestamp}}",
+        "description": "Base Machine for a Vagrant Cluster.  Can be run Standalone."
+      }
+    }]
+  ]
+
+}
+
+
+
